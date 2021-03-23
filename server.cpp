@@ -1,80 +1,13 @@
-// #include <iostream>
-// #include <stdio.h>
-// #include <WinSock2.h>
-// //gcc -o IOCP_Server.exe IOCP_Server.cpp -lws2_32 -lstdc++
-
-// #pragma comment(lib, "ws2_32.lib");
-
-// #define PORT_NUM 9000
-
-// using namespace std;
-
-// int main(void){
-//     WSADATA wsaData;
-//     SOCKET listenSocket;
-//     SOCKADDR_IN servAddr;
-//     SOCKADDR_IN clientAddr;
-//     char buffer[1024];
-//     int recv_size;
-
-//     if(WSAStartup(MAKEWORD(2, 2), &wsaData) != NO_ERROR){
-//         printf("Failed WSAStratup() \n");
-//         return 1;
-//     }
-//     listenSocket = socket(AF_INET, SOCK_DGRAM, 0);
-//     if(listenSocket == -1){
-//         cout << "Failed createSocket" << endl;
-//         return 1;
-//     }
-
-//     memset(&servAddr, 0, sizeof(servAddr));
-//     memset(&clientAddr, 0, sizeof(clientAddr));
-//     servAddr.sin_family = AF_INET;
-//     // servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-//     servAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-//     servAddr.sin_port = htons(PORT_NUM);
-
-//     if(bind(listenSocket, (SOCKADDR*)&servAddr, sizeof(servAddr)) == -1){
-//         cout << "Binding Error" << endl;
-//         closesocket(listenSocket);
-//         WSACleanup();
-//         return 1;
-//     }
-//     cout << "Start server!";
-
-//     SOCKET clientSocket;
-    
-//     while(1){
-//         int clientAddrlen = sizeof(clientAddr);
-//         recv_size = recvfrom(clientSocket, buffer, sizeof(buffer), 0, (SOCKADDR*)&clientAddr, &clientAddrlen);
-//         if(recv_size < 0){
-//             //cout << "recvfrom() error" << endl;
-//             //exit(0);
-//         }
-//         if(recv_size > 0){
-//             cout << recv_size << endl;
-//             break;
-//         }
-
-//         //cout << "get packet! client is: " << inet_ntoa(clientAddr.sin_addr) << endl;
-//         //cout << "packet data is : " << buffer << endl;
-//     }
-
-//     closesocket(listenSocket);
-//     WSACleanup();
-
-//     return 0;
-// }
-
 #include <stdio.h>
 #include <iostream>
 #include <winsock2.h> // 윈속 헤더 포함 
+#include <thread>
 #pragma comment (lib,"ws2_32.lib") // 윈속 라이브러리 링크
 #define BUFFER_SIZE 1024 // 버퍼 사이즈
- 
+
 using namespace std;
-int main(void)
-{
+
+void useSocket(){
     WSADATA wsaData; // 윈속 데이터 구조체.(WSAStartup() 사용할꺼!)
     SOCKET ServerSocket; // 소켓 선언
     SOCKADDR_IN ServerInfo; // 서버 주소정보 구조체
@@ -116,8 +49,7 @@ int main(void)
  
     // bind() - 새로 오는 클라이언트를 받을 welcome 소켓
     // 전달만 할꺼면 필요없음
-    if( bind( ServerSocket, (struct sockaddr*)&ServerInfo, //바인드 소켓에 서버정보 부여
-        sizeof(ServerInfo) ) == SOCKET_ERROR )
+    if( ::bind( ServerSocket, (sockaddr*)&ServerInfo, sizeof(ServerInfo) ) == SOCKET_ERROR )
     {
         cout<<"cannot bind."<<endl;
         closesocket( ServerSocket );
@@ -141,17 +73,30 @@ int main(void)
         cout<<"packet recv! client is "<<inet_ntoa( FromClient.sin_addr )<< endl;
         cout<<"packet data is " <<Buffer << endl;
  
-        //  패킷송신
-        // Send_Size = sendto( ServerSocket, Buffer, Recv_Size, 0,
-        //     (struct sockaddr*) &FromClient, sizeof( FromClient ) );
-        // if( Send_Size != Recv_Size )
-        // { 
-        //     cout<<"sendto() error!" <<endl;
-        //     exit(0); 
-        // }
+        //패킷송신
+        Send_Size = sendto( ServerSocket, Buffer, Recv_Size, 0,
+            (struct sockaddr*) &FromClient, sizeof( FromClient ) );
+        if( Send_Size != Recv_Size )
+        { 
+            cout<<"sendto() error!" <<endl;
+            exit(0); 
+        }else{
+            break;
+        }
     }
     closesocket( ServerSocket ); // 소켓을 닫습니다.
     WSACleanup();
+}
+void countNum(){
+    cout << "1234" << endl;
+}
+int main(void)
+{
+    thread th1(useSocket);
+    thread th2(countNum);
+
+    th1.join();
+    th2.join();
 
     return 0;
 }
